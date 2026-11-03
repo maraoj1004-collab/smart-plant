@@ -17,6 +17,9 @@ GitHub Actions CI: 룰 단위테스트 + ESP32 빌드 + 서버 테스트
 | 2. 로그를 DB에 저장 | [server/app.py](server/app.py) Flask + SQLite |
 | 3. CI 구현 | [.github/workflows/ci.yml](.github/workflows/ci.yml) |
 
+## 시뮬레이션 모드
+센서 없이 시연할 수 있도록 `USE_SIMULATED_SENSORS 1`(기본값)일 때 정상 → 건조 → 정상 → 고온 → 어두움 시나리오 값을 차례로 생성합니다. 룰 판단과 DB 저장은 실제와 똑같이 동작하고, `WATER`일 때 펌프 대신 보드 LED가 3초 켜집니다. 실제 센서를 연결하면 [main.cpp](firmware/src/main.cpp)에서 값을 `0`으로 바꾸면 됩니다.
+
 ## 룰셋 모델
 위에서부터 먼저 맞는 룰 하나를 적용합니다.
 
