@@ -4,6 +4,7 @@
 #include <DHT.h>
 #include "rules.h"
 #include "secrets.h"
+#include "camera_light.h"
 
 #define SOIL_PIN A0   // D0 (GPIO1)
 #define LIGHT_PIN A1  // D1 (GPIO2)
@@ -13,6 +14,9 @@
 
 // 1이면 센서 없이 시나리오 값으로 동작, 실제 센서를 연결하면 0으로 바꾸세요
 #define USE_SIMULATED_SENSORS 1
+// 1이면 조도를 보드 카메라 밝기로 실제 측정 (시뮬레이션 모드에서도 적용)
+// 빌드만 확인했고 보드 테스트 전이라 기본값은 꺼둠
+#define USE_CAMERA_LIGHT 0
 
 // 토양센서 보정값: 시리얼로 마른 흙/젖은 흙 값을 읽어서 바꾸세요
 #define SOIL_ADC_DRY 4095
@@ -22,6 +26,7 @@ const unsigned long INTERVAL_MS = 10000;
 const unsigned long PUMP_MS = 3000;
 
 DHT dht(DHT_PIN, DHT22);
+bool cameraReady = false;
 
 float readSoilPercent() {
   int raw = analogRead(SOIL_PIN);
@@ -48,13 +53,18 @@ Reading simulatedReading() {
 bool readSensors(Reading& r) {
   if (USE_SIMULATED_SENSORS) {
     r = simulatedReading();
-    return true;
+  } else {
+    r.soil = readSoilPercent();
+    r.temp = dht.readTemperature();
+    r.hum = dht.readHumidity();
+    r.light = analogRead(LIGHT_PIN);
+    if (isnan(r.temp) || isnan(r.hum)) return false;
   }
-  r.soil = readSoilPercent();
-  r.temp = dht.readTemperature();
-  r.hum = dht.readHumidity();
-  r.light = analogRead(LIGHT_PIN);
-  return !isnan(r.temp) && !isnan(r.hum);
+  if (cameraReady) {
+    int light = readCameraLight();
+    if (light >= 0) r.light = light;
+  }
+  return true;
 }
 
 void connectWiFi() {
@@ -90,6 +100,10 @@ void setup() {
   pinMode(STATUS_LED, OUTPUT);
   digitalWrite(STATUS_LED, HIGH);
   dht.begin();
+  if (USE_CAMERA_LIGHT) {
+    cameraReady = initCameraLight();
+    Serial.println(cameraReady ? "Camera light sensor OK" : "Camera init failed");
+  }
   connectWiFi();
   if (USE_SIMULATED_SENSORS) Serial.println("Simulated sensor mode");
 }
