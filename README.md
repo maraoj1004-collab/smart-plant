@@ -59,4 +59,5 @@ Windows 방화벽에서 5000번 포트를 허용하세요.
 
 ## API
 - `POST /logs` 요청 본문: `{"soil":20,"temp":25,"hum":50,"light":800,"action":"WATER"}`
-- `GET /logs` 최근 50개 로그 (최신순)
+- `GET /logs` 최근 50개 로그 (최신순, JSON)
+- `GET /` 로그 대시보드 (10초마다 새로고침)
