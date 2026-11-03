@@ -1,0 +1,15 @@
+# secrets
+firmware/include/secrets.h
+
+# PlatformIO
+.pio/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# DB
+*.db
