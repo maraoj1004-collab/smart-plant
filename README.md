@@ -1,6 +1,6 @@
 # 스마트 반려식물 관리기
 
-![CI](https://github.com/OWNER/smart-plant/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/maraoj1004-collab/smart-plant/actions/workflows/ci.yml/badge.svg)
 
 ESP32가 센서값을 읽고 **룰셋 모델**로 행동을 정한 뒤, 로그를 서버의 **SQLite DB**에 저장합니다. **GitHub Actions CI**가 룰 테스트, 펌웨어 빌드, 서버 테스트를 자동으로 실행합니다.
 
