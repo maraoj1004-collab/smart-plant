@@ -5,10 +5,14 @@
 #include "rules.h"
 #include "secrets.h"
 
-#define SOIL_PIN 34
-#define LIGHT_PIN 35
-#define DHT_PIN 4
-#define PUMP_PIN 26
+#define SOIL_PIN A0   // D0 (GPIO1)
+#define LIGHT_PIN A1  // D1 (GPIO2)
+#define DHT_PIN D3    // GPIO4
+#define PUMP_PIN D4   // GPIO5
+#define STATUS_LED LED_BUILTIN  // 보드 주황 LED (LOW = 켜짐)
+
+// 1이면 센서 없이 시나리오 값으로 동작, 실제 센서를 연결하면 0으로 바꾸세요
+#define USE_SIMULATED_SENSORS 1
 
 // 토양센서 보정값: 시리얼로 마른 흙/젖은 흙 값을 읽어서 바꾸세요
 #define SOIL_ADC_DRY 4095
@@ -23,6 +27,34 @@ float readSoilPercent() {
   int raw = analogRead(SOIL_PIN);
   float pct = (float)(SOIL_ADC_DRY - raw) * 100.0f / (SOIL_ADC_DRY - SOIL_ADC_WET);
   return constrain(pct, 0.0f, 100.0f);
+}
+
+// 정상 -> 건조 -> 정상 -> 고온 -> 어두움 순서로 돌면서 모든 룰을 보여줌
+Reading simulatedReading() {
+  static const Reading scenarios[] = {
+      {55, 24, 50, 1500},  // NONE
+      {22, 25, 45, 1400},  // WATER
+      {48, 26, 50, 1300},  // NONE
+      {50, 34, 35, 2500},  // HOT
+      {52, 23, 55, 120},   // DARK
+  };
+  static size_t step = 0;
+  Reading r = scenarios[step++ % (sizeof(scenarios) / sizeof(scenarios[0]))];
+  r.soil += random(-20, 21) / 10.0f;  // 약간의 잡음
+  r.temp += random(-5, 6) / 10.0f;
+  return r;
+}
+
+bool readSensors(Reading& r) {
+  if (USE_SIMULATED_SENSORS) {
+    r = simulatedReading();
+    return true;
+  }
+  r.soil = readSoilPercent();
+  r.temp = dht.readTemperature();
+  r.hum = dht.readHumidity();
+  r.light = analogRead(LIGHT_PIN);
+  return !isnan(r.temp) && !isnan(r.hum);
 }
 
 void connectWiFi() {
@@ -55,18 +87,16 @@ void setup() {
   Serial.begin(115200);
   pinMode(PUMP_PIN, OUTPUT);
   digitalWrite(PUMP_PIN, LOW);
+  pinMode(STATUS_LED, OUTPUT);
+  digitalWrite(STATUS_LED, HIGH);
   dht.begin();
   connectWiFi();
+  if (USE_SIMULATED_SENSORS) Serial.println("Simulated sensor mode");
 }
 
 void loop() {
   Reading r;
-  r.soil = readSoilPercent();
-  r.temp = dht.readTemperature();
-  r.hum = dht.readHumidity();
-  r.light = analogRead(LIGHT_PIN);
-
-  if (isnan(r.temp) || isnan(r.hum)) {
+  if (!readSensors(r)) {
     Serial.println("DHT read failed");
     delay(2000);
     return;
@@ -75,8 +105,10 @@ void loop() {
   Action a = decide(r);
   if (a == WATER) {
     digitalWrite(PUMP_PIN, HIGH);
+    digitalWrite(STATUS_LED, LOW);
     delay(PUMP_MS);
     digitalWrite(PUMP_PIN, LOW);
+    digitalWrite(STATUS_LED, HIGH);
   }
 
   sendLog(r, a);

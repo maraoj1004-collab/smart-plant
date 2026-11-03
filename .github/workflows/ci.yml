@@ -20,8 +20,8 @@ jobs:
       - run: cp include/secrets.example.h include/secrets.h
       - name: Rule model unit tests
         run: pio test -e native
-      - name: ESP32 build
-        run: pio run -e esp32dev
+      - name: ESP32-S3 (XIAO) build
+        run: pio run -e xiao_esp32s3
 
   server:
     runs-on: ubuntu-latest

@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/maraoj1004-collab/smart-plant/actions/workflows/ci.yml/badge.svg)
 
-ESP32가 센서값을 읽고 **룰셋 모델**로 행동을 정한 뒤, 로그를 서버의 **SQLite DB**에 저장합니다. **GitHub Actions CI**가 룰 테스트, 펌웨어 빌드, 서버 테스트를 자동으로 실행합니다.
+Seeed XIAO ESP32S3 Sense가 센서값을 읽고 **룰셋 모델**로 행동을 정한 뒤, 로그를 서버의 **SQLite DB**에 저장합니다. **GitHub Actions CI**가 룰 테스트, 펌웨어 빌드, 서버 테스트를 자동으로 실행합니다.
 
 ```
 [ESP32 + 센서] --(WiFi, HTTP POST JSON)--> [Flask 서버] --> [SQLite DB]
@@ -28,12 +28,16 @@ GitHub Actions CI: 룰 단위테스트 + ESP32 빌드 + 서버 테스트
 | - | 그 외 | `NONE` |
 
 ## 배선
-| 부품 | ESP32 핀 |
+| 부품 | XIAO 핀 |
 |---|---|
-| 토양수분 센서 (AO) | GPIO 34 |
-| 조도 센서 LDR (분압) | GPIO 35 |
-| DHT22 (DATA) | GPIO 4 |
-| 릴레이 (IN) → 펌프 | GPIO 26 |
+| 토양수분 센서 (AO) | A0 (D0) |
+| 조도 센서 LDR (분압) | A1 (D1) |
+| DHT22 (DATA) | D3 |
+| 릴레이 (IN) → 펌프 | D4 |
+
+- 센서 전원은 3V3과 GND에 연결합니다. XIAO의 GPIO는 3.3V라 5V 신호를 직접 넣으면 안 됩니다.
+- 5V 릴레이 모듈은 VCC를 5V(VBUS) 핀에 연결합니다.
+- WiFi를 쓰려면 함께 들어 있는 U.FL 안테나를 꼭 연결해야 합니다.
 
 ## 실행 방법
 ### 서버
@@ -47,7 +51,7 @@ Windows 방화벽에서 5000번 포트를 허용하세요.
 
 ### 펌웨어 (VS Code + PlatformIO)
 1. `firmware/include/secrets.example.h`를 `secrets.h`로 복사하고 WiFi와 서버 주소를 채웁니다.
-2. `pio run -e esp32dev -t upload`로 업로드하고 `pio device monitor`로 확인합니다.
+2. `pio run -e xiao_esp32s3 -t upload`로 업로드하고 `pio device monitor`로 확인합니다.
 3. `pio test -e native`로 룰 테스트를 PC에서 실행합니다.
 
 ## API
